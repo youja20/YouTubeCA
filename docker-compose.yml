@@ -1,0 +1,65 @@
+name: youtubeca
+
+# 공통 설정 — api / daemon / 일회성 잡이 같은 이미지와 같은 data 볼륨을 공유한다
+x-app: &app
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: youtubeca:local
+  env_file:
+    - .env
+  volumes:
+    - ./data:/app/data
+    - ./logs:/app/logs
+  init: true
+
+services:
+  # 스키마 마이그레이션 + 기본 키워드/설정 시드. api·daemon은 이게 끝난 뒤에 뜬다.
+  migrate:
+    <<: *app
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: /app/data/youtubeca.db
+    command: pnpm db:migrate
+    restart: "no"
+
+  api:
+    <<: *app
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: /app/data/youtubeca.db
+      # 컨테이너 밖에서 접근해야 하므로 루프백이 아닌 0.0.0.0에 바인딩한다.
+      # 호스트 쪽 노출은 아래 ports에서 127.0.0.1로 묶어 외부 노출을 막는다 (§11).
+      HOST: 0.0.0.0
+      PORT: 3000
+    command: pnpm --filter @youtubeca/api start
+    ports:
+      - "127.0.0.1:${PORT:-3000}:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      # /health는 LLM에 실제 요청을 보내므로 DB만 읽는 /settings로 확인한다
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/v1/settings').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  daemon:
+    <<: *app
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: /app/data/youtubeca.db
+    command: pnpm --filter @youtubeca/daemon start
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    # 데몬은 SIGTERM 후 진행 중인 잡을 커밋하고 종료한다 (계획서 §8.1)
+    stop_grace_period: 30s
+    restart: unless-stopped

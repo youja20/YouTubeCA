@@ -10,6 +10,8 @@
 - **pnpm 9** — `corepack enable && corepack prepare pnpm@9.12.0 --activate`
 - YouTube Data API v3 키, Google Gemini API 키
 
+> Docker만 있어도 됩니다 — [Docker로 실행](#docker로-실행) 참고. Node·pnpm 설치가 필요 없습니다.
+
 > macOS에서 Homebrew로 설치했다면 PATH에 추가해야 합니다:
 > `export PATH="/opt/homebrew/opt/node@22/bin:$PATH"`
 
@@ -77,6 +79,60 @@ pnpm --filter @youtubeca/daemon exec tsx src/cli/inspect.ts --keyword "무선이
 pnpm test                 # vitest (강도 공식, 토크나이저, 감성, LLM 계약, API 통합)
 pnpm build                # 전 패키지 타입 검사 + 웹 번들
 ```
+
+## Docker로 실행
+
+Node·pnpm을 직접 깔지 않고 컨테이너로 띄우려면 `run.sh`만 쓰면 됩니다.
+필요한 건 Docker(Compose v2)와 키가 채워진 `.env`뿐입니다.
+
+macOS는 Docker Engine이 네이티브로 돌지 않아 리눅스 VM이 필요합니다.
+Docker Desktop 대신 Colima를 쓰면 CLI만으로 끝납니다.
+
+```bash
+brew install colima docker docker-compose docker-buildx
+
+# Homebrew로 설치한 compose/buildx를 docker 플러그인으로 인식시킨다
+mkdir -p ~/.docker/cli-plugins
+ln -sfn /opt/homebrew/lib/docker/cli-plugins/docker-compose ~/.docker/cli-plugins/docker-compose
+ln -sfn /opt/homebrew/lib/docker/cli-plugins/docker-buildx  ~/.docker/cli-plugins/docker-buildx
+
+colima start --cpu 4 --memory 8 --disk 20 --vm-type vz --mount-type virtiofs
+```
+
+VM은 `colima stop`으로 내리고, 로그인 시 자동 기동은 `brew services start colima`.
+
+```bash
+cp .env.example .env      # YOUTUBE_API_KEY, GEMINI_API_KEY 채우기
+./run.sh up               # 이미지 빌드 → 마이그레이션 → api + daemon 기동
+```
+
+http://127.0.0.1:3000 하나만 열면 됩니다 (API가 SPA를 함께 서빙).
+
+```bash
+./run.sh logs daemon               # 로그 추적
+./run.sh ps                        # 컨테이너 상태
+./run.sh health                    # DB · LLM · quota · 데몬 상태
+./run.sh crawl --all               # 크롤링 (일회성 컨테이너, 데몬 없이 인라인)
+./run.sh crawl --keyword "무선이어폰" --stages analyze
+./run.sh inspect --keyword "무선이어폰"
+./run.sh shell                     # 컨테이너 셸
+./run.sh down                      # 중지 (data/ 의 DB는 유지)
+```
+
+전체 명령은 `./run.sh help`.
+
+구성:
+
+| 파일 | 역할 |
+| --- | --- |
+| `Dockerfile` | api·daemon 공용 이미지 (pnpm install → web 번들 빌드 → tsx 런타임) |
+| `docker-compose.yml` | `migrate` 완료 후 `api`·`daemon` 기동, `./data`·`./logs` 볼륨 마운트 |
+| `run.sh` | 사전 점검(.env·docker) + 위 명령 래퍼 |
+
+- DB는 호스트의 `data/`에 그대로 남으므로 `./run.sh down` 해도 유지됩니다.
+- 포트를 바꾸려면 `PORT=3001 ./run.sh up`.
+- API는 `127.0.0.1`에만 바인딩됩니다. 인증이 없으므로 외부에 열지 마세요 (계획서 §11).
+- 데몬은 `SIGTERM` 후 진행 중인 잡을 커밋하고 종료합니다(유예 30초).
 
 ## 운영 기동 (pm2)
 
