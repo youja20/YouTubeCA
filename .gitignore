@@ -1,0 +1,27 @@
+# env
+.env
+.env.local
+.env.*.local
+
+# deps / build
+node_modules/
+dist/
+build/
+.turbo/
+
+# data
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/
