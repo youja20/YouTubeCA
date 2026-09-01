@@ -82,7 +82,7 @@ export type SettingKey = keyof typeof DEFAULT_SETTINGS;
 
 /** 코드 기본값 (설정뷰에서 변경하지 않음) */
 export const CODE_DEFAULTS = {
-  port: 3000,
+  port: 3200,
   databaseUrl: './data/youtubeca.db',
   /** Gemini OpenAI 호환 엔드포인트 (GEMINI_BASE_URL로 재정의 가능) */
   llmBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',

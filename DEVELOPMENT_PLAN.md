@@ -588,7 +588,7 @@ LLM_MODEL=gemini-3.7-flash # 비우면 코드 기본값(gemini-3.7-flash)
 
 | 키 | 기본값 | 위치 |
 |---|---|---|
-| `port` / `databaseUrl` | `3000` / `./data/youtubeca.db` | 코드 기본값 (CLI 플래그로 override) |
+| `port` / `databaseUrl` | `3200` / `./data/youtubeca.db` | 코드 기본값 (CLI 플래그로 override) |
 | `yt.dailyQuota` | `10000` | config 테이블 |
 | `yt.maxVideosPerKeyword` | `20` | config 테이블 · 설정뷰 |
 | `yt.maxCommentsPerVideo` | `500` | config 테이블 · 설정뷰 |

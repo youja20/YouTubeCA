@@ -24,11 +24,11 @@ pnpm db:migrate           # data/youtubeca.db 생성
 ## 개발 서버
 
 ```bash
-pnpm dev                  # api(3000) + daemon + web(5173) 동시 기동
+pnpm dev                  # api(3200) + daemon + web(5200) 동시 기동
 ```
 
-- 웹: http://localhost:5173 (API는 `/api`로 프록시)
-- API: http://localhost:3000/api/v1
+- 웹: http://localhost:5200 (API는 `/api`로 프록시)
+- API: http://localhost:3200/api/v1
 
 개별 실행이 필요하면:
 
@@ -87,7 +87,7 @@ pm2 logs youtubeca-daemon
 ```
 
 `NODE_ENV=production`인 API는 `apps/web/dist`의 SPA를 함께 서빙하므로
-http://127.0.0.1:3000 하나만 열면 됩니다. 기본 바인딩은 루프백이며,
+http://127.0.0.1:3200 하나만 열면 됩니다. 기본 바인딩은 루프백이며,
 인증이 없으므로 외부에 그대로 노출하지 마세요 (계획서 §11).
 
 ## 구조
@@ -104,16 +104,16 @@ packages/llm      Gemini 클라이언트 · 프롬프트 · 인젝션 가드
 
 ## 문제 해결
 
-**`EADDRINUSE: address already in use 127.0.0.1:3000`**
+**`EADDRINUSE: address already in use 127.0.0.1:3200`**
 
 이전에 띄운 API 서버가 남아 있다는 뜻입니다. 확인 후 종료하세요.
 
 ```bash
-lsof -nP -iTCP:3000 -sTCP:LISTEN
+lsof -nP -iTCP:3200 -sTCP:LISTEN
 ```
 
 `PORT=3001 pnpm --filter @youtubeca/api dev`로 다른 포트를 쓸 수도 있지만,
-웹 개발 서버의 프록시 대상이 3000이므로 `apps/web/vite.config.ts`도 함께 바꿔야 합니다.
+웹 개발 서버의 프록시 대상이 3200이므로 `apps/web/vite.config.ts`도 함께 바꿔야 합니다.
 
 `pnpm dev`를 Ctrl+C로 끊었는데 프로세스가 남는 경우:
 
@@ -131,7 +131,7 @@ export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
 
 **AI 분석만 계속 실패**
 
-설정뷰의 상태 배지나 `curl localhost:3000/api/v1/health`로 LLM 상태를 먼저 확인하세요.
+설정뷰의 상태 배지나 `curl localhost:3200/api/v1/health`로 LLM 상태를 먼저 확인하세요.
 `GEMINI_API_KEY`가 잘못됐거나 `LLM_MODEL`이 사용할 수 없는 모델이면 헬스체크가
 그 이유를 그대로 알려줍니다. 태그·강도는 그대로 유지되므로
 `pnpm crawl --keyword "..." --stages analyze`로 재크롤링 없이 분석만 다시 돌릴 수 있습니다.

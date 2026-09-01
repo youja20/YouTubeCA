@@ -16,7 +16,7 @@ module.exports = {
       script: tsx,
       args: 'src/index.ts',
       cwd: resolve(root, 'apps/api'),
-      env: { NODE_ENV: 'production', PORT: '3000', HOST: '127.0.0.1' },
+      env: { NODE_ENV: 'production', PORT: '3200', HOST: '127.0.0.1' },
       autorestart: true,
       max_restarts: 10,
       restart_delay: 2000,
