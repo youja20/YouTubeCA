@@ -1,17 +1,14 @@
-import Database from 'better-sqlite3';
-import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { CODE_DEFAULTS } from '@youtubeca/shared';
 import { REPO_ROOT } from '@youtubeca/shared/env';
-import * as schema from './schema.js';
+import { Database } from './sqlite.js';
 
-export type Db = BetterSQLite3Database<typeof schema>;
+export { Database, Statement, type RunResult } from './sqlite.js';
 
 export interface DbContext {
-  /** better-sqlite3 원시 핸들 — 집계/윈도우 쿼리는 이쪽을 사용 */
-  sqlite: Database.Database;
-  db: Db;
+  /** node:sqlite 핸들(better-sqlite3 호환 래퍼) — 모든 쿼리는 이쪽을 사용 */
+  sqlite: Database;
   path: string;
   close(): void;
 }
@@ -34,8 +31,7 @@ export function openDatabase(input?: string): DbContext {
   sqlite.pragma('temp_store = MEMORY');
   sqlite.pragma('cache_size = -64000');
 
-  const db = drizzle(sqlite, { schema });
-  return { sqlite, db, path, close: () => sqlite.close() };
+  return { sqlite, path, close: () => sqlite.close() };
 }
 
 let shared: DbContext | undefined;

@@ -98,7 +98,7 @@
 | 런타임 | **Node.js 22 LTS + TypeScript 5** | 요구사항 7. 타입 안정성 |
 | 패키지 | **pnpm workspaces (모노레포)** | API/데몬/웹이 DB 스키마·타입 공유 |
 | API 서버 | **Fastify 5** | 가볍고 빠름, 스키마 기반 검증(zod) 내장 친화 |
-| DB | **SQLite (better-sqlite3) + WAL + FTS5** | 단일 노드 운용에 충분, 무설치, 전문검색 내장. PostgreSQL 이관 경로 확보 |
+| DB | **SQLite (Node 내장 `node:sqlite`) + WAL + FTS5** | 단일 노드 운용에 충분, 무설치, 전문검색 내장. PostgreSQL 이관 경로 확보. 네이티브 모듈이 없어 CentOS 7(glibc 2.17)에서도 동작 (이슈 #1) |
 | ORM/마이그레이션 | **Drizzle ORM + drizzle-kit** | SQL에 가깝고 타입 추론 우수, SQLite→PG 전환 용이 |
 | 큐 | **DB 기반 자체 잡 테이블** (Redis 불필요) | 인프라 최소화. 동시성 낮음(크롤링 잡은 순차) |
 | 프론트 | **React 19 + Vite + TanStack Router/Query** | 뷰 간 드릴다운 라우팅·캐싱에 적합 |
