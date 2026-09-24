@@ -6,7 +6,7 @@
 
 ## 요구 사항
 
-- **Node.js 22 LTS 이상** — `node -v`로 확인
+- **Node.js 22.13 이상** — `node -v`로 확인 (내장 `node:sqlite` 사용, 네이티브 모듈 없음)
 - **pnpm 9** — `corepack enable && corepack prepare pnpm@9.12.0 --activate`
 - YouTube Data API v3 키, Google Gemini API 키
 
@@ -90,13 +90,36 @@ pm2 logs youtubeca-daemon
 http://127.0.0.1:3200 하나만 열면 됩니다. 기본 바인딩은 루프백이며,
 인증이 없으므로 외부에 그대로 노출하지 마세요 (계획서 §11).
 
+## CentOS 7 서버 배포
+
+CentOS 7(glibc 2.17)은 공식 Node 22 바이너리와 better-sqlite3 prebuild를 실행할 수 없습니다.
+그래서 DB는 Node 내장 `node:sqlite`를 쓰고, Node는 unofficial-builds의
+`linux-x64-glibc-217` 빌드를 사용자 로컬(`~/.local/node22`)에 설치합니다. 시스템 node와
+`~/.bashrc`는 건드리지 않습니다.
+
+```bash
+# 1) 서버에서 1회: Node 22 + pnpm + pm2 설치 (root 불필요)
+bash scripts/centos7/setup.sh
+cp .env.example .env      # API 키 채우기
+
+# 2) 로컬에서 배포: 웹 번들은 로컬에서 빌드해 올리고, 서버는 운영 의존성만 설치
+bash scripts/centos7/deploy.sh          # REMOTE, REMOTE_DIR, BRANCH 로 대상 변경
+
+# 서버에서 pm2 조작 시
+. scripts/centos7/env.sh && pm2 status
+```
+
+- 메모리 1.8G·스왑 없음 서버를 기준으로 pm2 상한을 API 300M / 데몬 450M로 잡았습니다.
+  서버에서 `pnpm build`(tsc, vite)는 돌리지 마세요.
+- 재부팅 후 자동 기동(`pm2 startup`)과 80/443 리버스 프록시 연결은 관리자 권한이 필요합니다.
+
 ## 구조
 
 ```
 apps/api      Fastify REST + SSE 로그 스트림
 apps/daemon   5단계 파이프라인 워커 (discover→collect→extract→score→analyze)
 apps/web      React SPA (키워드 / 태그 / 커멘트 / 설정 뷰)
-packages/db       Drizzle 스키마 · 마이그레이션 · 쿼리
+packages/db       node:sqlite 래퍼 · 마이그레이션 · 쿼리 (Drizzle 스키마는 drizzle-kit 전용)
 packages/shared   공용 타입 · zod 스키마 · 텍스트/감성 유틸
 packages/youtube  YouTube Data API 클라이언트 · quota 가드 · 영상 랭킹
 packages/llm      Gemini 클라이언트 · 프롬프트 · 인젝션 가드
